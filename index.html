@@ -7,7 +7,6 @@
 <style>
   body {
     font-family: Arial, sans-serif;
-    background: #ffffff;
     padding: 20px;
   }
   h1 {
@@ -15,8 +14,8 @@
   }
   label {
     font-weight: bold;
+    margin-top: 12px;
     display: block;
-    margin-top: 15px;
   }
   select, textarea {
     width: 100%;
@@ -27,14 +26,18 @@
     height: 120px;
   }
   button {
-    margin-top: 20px;
     width: 100%;
+    margin-top: 15px;
     padding: 12px;
-    font-size: 16px;
     background: #6ab04c;
-    color: white;
+    color: #fff;
     border: none;
+    font-size: 16px;
     cursor: pointer;
+  }
+  audio {
+    width: 100%;
+    margin-top: 15px;
   }
 </style>
 </head>
@@ -71,61 +74,89 @@
 
 <button onclick="generate()">Generate</button>
 
+<audio id="player" controls></audio>
+
 <script>
+/* ===============================
+   Voice Data (JSON-style)
+   =============================== */
 const voices = [
   {"vid":"Eric","name":"Eric","flag":"US","lang":"English","accent":"American","gender":"M","api":"seediffusion"},
   {"vid":"Rod","name":"Rod22K_HQ","flag":"US","lang":"English","accent":"American","gender":"M","api":"acapela"},
   {"vid":"Adam","name":"Adam","flag":"GB","lang":"English","accent":"British","gender":"M","api":"cereproc"}
 ];
 
-function updateVoices() {
-  const api = document.getElementById("api").value;
-  const lang = document.getElementById("language").value;
-  const gender = document.getElementById("gender").value;
-  const voiceSelect = document.getElementById("voice");
+/* ===============================
+   CereProc API CONST (as requested)
+   =============================== */
+const CEREPROC_API =
+  "https://app.cereproc.com/live-demo?ajax_form=1&_wrapper_format=drupal_ajax";
 
-  voiceSelect.innerHTML = "";
+function updateVoices() {
+  const api = apiSelect.value;
+  const lang = language.value;
+  const gen = gender.value;
+  voice.innerHTML = "";
 
   voices.forEach(v => {
     if (
-      (api === v.api) &&
+      v.api === api &&
       (lang === "All" || v.lang === lang) &&
-      (gender === "All" || v.gender === gender)
+      (gen === "All" || v.gender === gen)
     ) {
-      const opt = document.createElement("option");
-      opt.value = v.vid;
-      opt.textContent = `:${v.flag}: ${v.name}`;
-      voiceSelect.appendChild(opt);
+      const o = document.createElement("option");
+      o.value = v.vid;
+      o.textContent = `:${v.flag}: ${v.name}`;
+      voice.appendChild(o);
     }
   });
 }
 
 function generate() {
-  const api = document.getElementById("api").value;
-  const voice = document.getElementById("voice").value;
-  const text = encodeURIComponent(document.getElementById("text").value);
-  let url = "";
+  const api = apiSelect.value;
+  const v = voice.value;
+  const text = encodeURIComponent(textInput.value);
+  let audioUrl = "";
 
+  /* Seediffusion */
   if (api === "seediffusion") {
-    url = `http://speech.seediffusion.cc:7774/synthesize?voice=${voice}&text=${text}`;
+    audioUrl =
+      `http://speech.seediffusion.cc:7774/synthesize?voice=${v}&text=${text}`;
   }
 
+  /* Acapela (CORRECTED – SINGLE URL, NO SPLIT) */
   if (api === "acapela") {
-    url =
-      `https://www.acapela-cloud.com/api/command/?voice=${safeVoiceId}22k_HQ&text=%5Caudio%3Dmix%3D`;
+    const safeVoiceId = v.replace("22K_HQ", "");
+    audioUrl =
+      `https://www.acapela-cloud.com/api/command/?voice=${safeVoiceId}22k_HQ&text=%5Caudio%3Dmix%3D${text}&output=stream&type=mp3&samplerate=22050`;
   }
 
+  /* CereProc (demo – no redirect, notice only) */
   if (api === "cereproc") {
-    url = "https://app.cereproc.com/live-demo?ajax_form=1&_wrapper_format=drupal_ajax"";
+    alert(
+      "CereProc live demo cannot stream audio directly.\n" +
+      "API endpoint:\n" + CEREPROC_API
+    );
+    return;
   }
 
-  if (url) window.open(url, "_blank");
+  player.src = audioUrl;
+  player.play();
 }
 
-document.getElementById("text").addEventListener("input", e => {
-  document.getElementById("count").textContent =
-    `${e.target.value.length} / 950`;
+/* Character Counter */
+textInput.addEventListener("input", () => {
+  count.textContent = `${textInput.value.length} / 950`;
 });
+
+/* Shortcuts */
+const apiSelect = document.getElementById("api");
+const language = document.getElementById("language");
+const gender = document.getElementById("gender");
+const voice = document.getElementById("voice");
+const textInput = document.getElementById("text");
+const player = document.getElementById("player");
+const count = document.getElementById("count");
 
 updateVoices();
 </script>
