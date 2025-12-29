@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>TTS Example</title>
+</head>
+<body>
+  <h2>tutorial coming soon</h2>
+
+  <label for="voice">choose a voice:</label>
+  <select id="voice">
+    <option value="IVONA 2 Eric">IVONA 2 Eric</option>
+  </select>
+
+  <br><br>
+
+  <label for="text">enter your text:</label>
+  <input type="text" id="text" placeholder="type whatever you want like: big chungus " size="80">
+
+  <br><br>
+
+  <button onclick="goToVoicePage()">speak</button>
+
+  <script>
+    function goToVoicePage() {
+      const voice = document.getElementById('voice').value;
+      const text = encodeURIComponent(document.getElementById('text').value);
+      const url = `http://speech.seediffusion.cc:7774/synthesize?voice=${voice}&text=${text}`;
+      window.location.href = url;
+    }
+  </script>
+</body>
+
+</html>
+
+
+
+
+
