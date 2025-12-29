@@ -112,14 +112,11 @@ function generate() {
 
   if (api === "acapela") {
     url =
-      `https://www.acapela-cloud.com/api/command/?` +
-      `voice=${voice}&text=${text}` +
-      `&output=stream&type=mp3&samplerate=22050`;
+      `https://www.acapela-cloud.com/api/command/?voice=${safeVoiceId}22k_HQ&text=%5Caudio%3Dmix%3D`;
   }
 
   if (api === "cereproc") {
-    url = "https://app.cereproc.com/live-demo";
-    alert("CereProc demo opened. Paste your text and select voice manually.");
+    url = "https://app.cereproc.com/live-demo?ajax_form=1&_wrapper_format=drupal_ajax"";
   }
 
   if (url) window.open(url, "_blank");
