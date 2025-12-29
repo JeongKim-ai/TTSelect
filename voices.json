@@ -1,6 +1,6 @@
 {  
   "voices": [  
-    {"vid": "[2, 1, 9],", "name": "Alan", "flag": "AU "lang": "English", "accent": "Australian", "gender": "M", "provider":"oddcast"},  
+    {"vid": "9-2-1", "name": "Alan", "flag": "AU", "lang": "English", "accent": "Australian", "gender": "M", "provider":"oddcast"},  
     {"vid": "Adam", "name": "Adam", "flag": "US", "lang": "English", "accent": "American", "gender": "M", "provider":"cereproc"}  
   ]  
 }  
