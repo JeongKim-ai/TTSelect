@@ -1,14 +1,6 @@
-[
-  {
-    "api": "CereProc",
-    "lang": "🇺🇸",
-    "voiceId": "Adam",
-    "voice": "Adam"
-  },
-  {
-    "api": "Oddcast",
-    "lang": "🇺🇸",
-    "voiceId": [2, 1, 9],
-    "voice": "Alan"
-  }
-]
+{  
+  "voices": [  
+    {"vid": "[2, 1, 9],", "name": "Alan", "flag": "AU "lang": "English", "accent": "Australian", "gender": "M", "provider":"oddcast"},  
+    {"vid": "Adam", "name": "Adam", "flag": "US", "lang": "English", "accent": "American", "gender": "M", "provider":"cereproc"}  
+  ]  
+}  
