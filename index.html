@@ -2,170 +2,228 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Text-to-Speech Generator</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTS Generator</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-  }
-  h1 {
-    color: #6ab04c;
-  }
-  label {
-    font-weight: bold;
-    margin-top: 12px;
-    display: block;
-  }
-  select, textarea {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-  }
-  textarea {
-    height: 120px;
-  }
-  button {
-    margin-top: 15px;
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    background: #6ab04c;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-  audio {
-    margin-top: 15px;
-    width: 100%;
-  }
+	body {
+		font-family: Arial, sans-serif;
+		margin: 0;
+		padding: 0;
+		background-color: #f4f4f4;
+	}
+
+	.container {
+		width: 80%;
+		max-width: 1000px;
+		margin: 40px auto;
+		background-color: #fff;
+		padding: 20px;
+		border-radius: 8px;
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+	}
+
+	h1 {
+		text-align: center;
+		color: #333;
+		margin-bottom: 20px;
+	}
+
+	p {
+		font-size: 16px;
+		color: #333;
+	}
+
+	form {
+		display: flex;
+		flex-direction: column;
+		margin-top: 20px;
+	}
+
+	label {
+		margin-bottom: 8px;
+		font-weight: bold;
+	}
+
+	select, input[type="text"], button {
+		padding: 10px;
+		font-size: 16px;
+		margin-bottom: 20px;
+		border-radius: 5px;
+		border: 1px solid #ccc;
+		outline: none;
+	}
+
+	select:focus, input[type="text"]:focus, button:focus {
+		border-color: #28a745;
+	}
+
+	button {
+		background-color: #28a745;
+		color: white;
+		cursor: pointer;
+		border: none;
+	}
+
+	button:hover {
+		background-color: #1e7e34;
+	}
+
+	#liveRegion {
+		margin-top: 20px;
+		color: red;
+		font-weight: bold;
+	}
+
+	audio {
+		display: block;
+		width: 100%;
+		margin-top: 20px;
+		border-radius: 8px;
+	}
+
+	.search-container {
+		display: flex;
+		align-items: center;
+		margin-bottom: 15px;
+	}
 </style>
 </head>
-
 <body>
+<div class="container">
+	<h1>TTS Generator</h1>
+	<p>Generate voices With your Providers Like Acapela, Oddcast, Azure and CereProc. directly in your browser.</p>
 
-<h1>Text-to-Speech Generator</h1>
+	<form id="ttsForm">
+		<label for="providerSelect">Provider (API):</label>
+		<select id="providerSelect">
+			<option value="seediffusion">Seediffusion</option>
+			<option value="cereproc">CereProc</option>
+			<option value="oddcast">Oddcast</option>
+		</select>
 
-<label>API:</label>
-<select id="api" onchange="updateVoices()">
-  <option value="seediffusion">Seediffusion</option>
-  <option value="acapela">Acapela</option>
-  <option value="cereproc">CereProc</option>
-</select>
+		<label for="languageSelect">Language:</label>
+		<select id="languageSelect">
+			<option value="all">All</option>
+			<option value="English">English</option>
+			<option value="Spanish">Spanish</option>
+		</select>
 
-<label>Language:</label>
-<select id="language" onchange="updateVoices()">
-  <option value="All">All</option>
-  <option value="English">English</option>
-</select>
+		<label for="genderSelect">Gender:</label>
+		<select id="genderSelect">
+			<option value="all">All</option>
+			<option value="M">Male</option>
+			<option value="F">Female</option>
+		</select>
 
-<label>Gender:</label>
-<select id="gender" onchange="updateVoices()">
-  <option value="All">All</option>
-  <option value="M">Male</option>
-</select>
+		<div class="search-container">
+			<input type="text" id="voiceSearch" placeholder="Search for a voice...">
+		</div>
 
-<label>Voice:</label>
-<select id="voice"></select>
+		<label for="voiceSelect">Choose a voice:</label>
+		<select id="voiceSelect">
+			<option value="">--Select a voice--</option>
+		</select>
 
-<label>Text:</label>
-<textarea id="text" maxlength="950">hi</textarea>
-<div id="count">2 / 950</div>
+		<label for="textInput">Text to synthesize:</label>
+		<input type="text" id="textInput" placeholder="Enter text here">
 
-<button onclick="generate()">Generate</button>
+		<button type="button" id="previewButton">Preview</button>
+		<button type="submit" id="synthesizeButton">Synthesize</button>
+	</form>
 
-<audio id="player" controls></audio>
+	<button type="button" id="downloadButton" style="display:none;">Download Audio</button>
+
+	<div id="liveRegion" aria-live="polite"></div>
+	<audio id="audioPlayer" controls style="display:none;"></audio>
+</div>
 
 <script>
-/* ===============================
-   VOICE DATABASE
-   =============================== */
-const voices = [
-  {"vid":"Eric","name":"Eric","flag":"US","lang":"English","accent":"American","gender":"M","api":"seediffusion"},
-  {"vid":"Rod","name":"Rod","flag":"US","lang":"English","accent":"American","gender":"M","api":"acapela"},
-  {"vid":"Adam","name":"Adam","flag":"GB","lang":"English","accent":"British","gender":"M","api":"cereproc"}
-];
+	let voicesData = [];
+	let currentAudioUrl = '';
+	const audioCache = new Map();
 
-/* ===============================
-   CEREPROC API CONST
-   =============================== */
-const CEREPROC_API =
-  "https://app.cereproc.com/live-demo?ajax_form=1&_wrapper_format=drupal_ajax";
+	function loadVoices() {
+		$.getJSON('voices.json', function(data) {
+			if (Array.isArray(data.voices)) {
+				voicesData = data.voices;
+				updateVoiceList();
+			} else {
+				$('#liveRegion').text('Failed to load voices.');
+			}
+		}).fail(() => {
+			$('#liveRegion').text('Error fetching voices.');
+		});
+	}
 
-/* ===============================
-   UPDATE VOICE LIST
-   =============================== */
-function updateVoices() {
-  const api = document.getElementById("api").value;
-  const lang = document.getElementById("language").value;
-  const gender = document.getElementById("gender").value;
-  const voiceSelect = document.getElementById("voice");
+	function updateVoiceList() {
+		const provider = $('#providerSelect').val();
+		const language = $('#languageSelect').val();
+		const gender = $('#genderSelect').val();
+		const search = $('#voiceSearch').val().toLowerCase();
 
-  voiceSelect.innerHTML = "";
+		const voiceSelect = $('#voiceSelect');
+		voiceSelect.empty().append(new Option('--Select a voice--', ''));
 
-  voices.forEach(v => {
-    if (
-      v.api === api &&
-      (lang === "All" || v.lang === lang) &&
-      (gender === "All" || v.gender === gender)
-    ) {
-      const opt = document.createElement("option");
-      opt.value = v.vid;
-      opt.textContent = `:${v.flag}: ${v.name}`;
-      voiceSelect.appendChild(opt);
-    }
-  });
-}
+		voicesData.forEach(v => {
+			if ((provider === 'all' || v.provider === provider) &&
+				(language === 'all' || v.lang === language) &&
+				(gender === 'all' || v.gender === gender) &&
+				(search === '' || v.name.toLowerCase().includes(search))) {
+				voiceSelect.append(new Option(`${v.name} (${v.accent})`, v.vid));
+			}
+		});
+	}
 
-/* ===============================
-   GENERATE SPEECH (NO REDIRECT)
-   =============================== */
-function generate() {
-  const api = document.getElementById("api").value;
-  const voice = document.getElementById("voice").value;
-  const text = encodeURIComponent(document.getElementById("text").value);
-  const audio = document.getElementById("player");
+	function doSynthesis(textOverride) {
+		const voiceId = $('#voiceSelect').val();
+		const text = encodeURIComponent(textOverride || $('#textInput').val());
+		const provider = $('#providerSelect').val();
 
-  let url = "";
+		if (!voiceId) { $('#liveRegion').text('Please select a voice.'); return; }
+		if (!text) { $('#liveRegion').text('Please enter text to synthesize.'); return; }
 
-  /* Seediffusion */
-  if (api === "seediffusion") {
-    url = `http://speech.seediffusion.cc:7774/synthesize?voice=${voice}&text=${text}`;
-    audio.src = url;
-    audio.play();
-  }
+		let url = '';
+		if (provider === 'seediffusion') {
+			url = `http://speech.seediffusion.cc:7774/synthesize?voice=${voiceId}&text=${text}`;
+		} else if (provider === 'cereproc') {
+			url = `https://app.cereproc.com/live-demo?ajax_form=1&_wrapper_format=drupal_ajax`;
+		} else if (provider === 'oddcast') {
+			url = `https://cache-a.oddcast.com/tts/gen.php?voice=${voiceId}&text=${text}`;
+		}
 
-  /* Acapela (CORRECTED, NOT SPLIT) */
-  if (api === "acapela") {
-    const safeVoiceId = voice;
-    url =
-      `https://www.acapela-cloud.com/api/command/?voice=${safeVoiceId}22k_HQ&text=%5Caudio%3Dmix%3D${text}` +
-      `&output=stream&type=mp3&samplerate=22050`;
+		const audioPlayer = $('#audioPlayer');
+		audioPlayer.attr('src', url).show();
+		audioPlayer[0].play();
+		$('#downloadButton').show();
+	}
 
-    audio.src = url;
-    audio.play();
-  }
+	$(document).ready(function() {
+		loadVoices();
 
-  /* CereProc (no direct stream available) */
-  if (api === "cereproc") {
-    alert(
-      "CereProc does not provide direct audio streaming.\n" +
-      "API endpoint stored:\n\n" + CEREPROC_API
-    );
-  }
-}
+		$('#voiceSearch').on('input', updateVoiceList);
+		$('#providerSelect, #languageSelect, #genderSelect').on('change', updateVoiceList);
 
-/* ===============================
-   TEXT COUNTER
-   =============================== */
-document.getElementById("text").addEventListener("input", e => {
-  document.getElementById("count").textContent =
-    `${e.target.value.length} / 950`;
-});
+		$('#previewButton').on('click', function() {
+			const voiceName = $('#voiceSelect').val();
+			if (voiceName) doSynthesis(`Hello, my name is ${voiceName}.`);
+			else $('#liveRegion').text('Please select a voice to preview.');
+		});
 
-/* INIT */
-updateVoices();
+		$('#ttsForm').on('submit', function(e) {
+			e.preventDefault();
+			doSynthesis();
+		});
+
+		$('#downloadButton').on('click', function() {
+			if (currentAudioUrl) {
+				const link = document.createElement('a');
+				link.href = currentAudioUrl;
+				link.download = 'speech.mp3';
+				link.click();
+			}
+		});
+	});
 </script>
-
 </body>
 </html>
