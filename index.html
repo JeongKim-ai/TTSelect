@@ -1,82 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>TTSelect Generator</title>
+<meta charset="UTF-8">
+<title>Text-to-Speech Generator</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #ffffff;
+    padding: 20px;
+  }
+  h1 {
+    color: #6ab04c;
+  }
+  label {
+    font-weight: bold;
+    display: block;
+    margin-top: 15px;
+  }
+  select, textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+  }
+  textarea {
+    height: 120px;
+  }
+  button {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    background: #6ab04c;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+</style>
 </head>
 
 <body>
-  <h2>TTSelect TTS Generator (Tutorial Coming Soon)</h2>
 
-  <label for="voice">Choose a voice:</label>
-  <select id="voice">
-    <!-- Seediffusion -->
-    <option value="seediffusion|IVONA 2 Eric">IVONA 2 Eric (Seediffusion)</option>
+<h1>Text-to-Speech Generator</h1>
 
-    <!-- Acapela -->
-    <option value="acapela|Rod">Rod22K_HQ (Acapela)</option>
-  </select>
+<label>API:</label>
+<select id="api" onchange="updateVoices()">
+  <option value="seediffusion">Seediffusion</option>
+  <option value="acapela">Acapela</option>
+  <option value="cereproc">CereProc</option>
+</select>
 
-  <br><br>
+<label>Language:</label>
+<select id="language" onchange="updateVoices()">
+  <option value="All">All</option>
+  <option value="English">English</option>
+</select>
 
-  <label for="text">Enter your text:</label><br>
-  <input
-    type="text"
-    id="text"
-    placeholder="Type whatever you want like: big chungus"
-    size="80"
-  >
+<label>Gender:</label>
+<select id="gender" onchange="updateVoices()">
+  <option value="All">All</option>
+  <option value="M">Male</option>
+</select>
 
-  <br><br>
+<label>Voice:</label>
+<select id="voice"></select>
 
-  <button onclick="speak()">Speak</button>
+<label>Text:</label>
+<textarea id="text" maxlength="950">hi</textarea>
+<div id="count">2 / 950</div>
 
-  <script>
-    /* ===============================
-       API URL CONSTANTS
-    =============================== */
+<button onclick="generate()">Generate</button>
 
-    const SEEDIFFUSION_API =
-      'http://speech.seediffusion.cc:7774/synthesize?voice=${voice}&text=${text}';
+<script>
+const voices = [
+  {"vid":"Eric","name":"Eric","flag":"US","lang":"English","accent":"American","gender":"M","api":"seediffusion"},
+  {"vid":"Rod","name":"Rod22K_HQ","flag":"US","lang":"English","accent":"American","gender":"M","api":"acapela"},
+  {"vid":"Adam","name":"Adam","flag":"GB","lang":"English","accent":"British","gender":"M","api":"cereproc"}
+];
 
-    const ACAPELA_API =
-      'https://www.acapela-cloud.com/api/command/?voice=${voice}22k_HQ&text=%5Caudio%3Dmix%3D"male"%3Bvolume%3D15%3Brepeat%3Don%5C${text}&output=stream&type=mp3&samplerate=22050&token=bd8b22e3e5ebbaa05ea0055aec4e16c357c29486';
+function updateVoices() {
+  const api = document.getElementById("api").value;
+  const lang = document.getElementById("language").value;
+  const gender = document.getElementById("gender").value;
+  const voiceSelect = document.getElementById("voice");
 
+  voiceSelect.innerHTML = "";
 
-    /* ===============================
-       MAIN FUNCTION
-    =============================== */
-
-    function speak() {
-      const voiceSelect = document.getElementById('voice').value;
-      const textInput = document.getElementById('text').value;
-
-      if (!textInput.trim()) {
-        alert('Please enter text first.');
-        return;
-      }
-
-      const encodedText = encodeURIComponent(textInput);
-
-      const [engine, voice] = voiceSelect.split('|');
-
-      let finalUrl = '';
-
-      if (engine === 'seediffusion') {
-        finalUrl = SEEDIFFUSION_API
-          .replace('${voice}', voice)
-          .replace('${text}', encodedText);
-      }
-
-      if (engine === 'acapela') {
-        finalUrl = ACAPELA_API
-          .replace('${voice}', voice)
-          .replace('${text}', encodedText);
-      }
-
-      // Redirect to TTS stream
-      window.location.href = finalUrl;
+  voices.forEach(v => {
+    if (
+      (api === v.api) &&
+      (lang === "All" || v.lang === lang) &&
+      (gender === "All" || v.gender === gender)
+    ) {
+      const opt = document.createElement("option");
+      opt.value = v.vid;
+      opt.textContent = `:${v.flag}: ${v.name}`;
+      voiceSelect.appendChild(opt);
     }
-  </script>
+  });
+}
+
+function generate() {
+  const api = document.getElementById("api").value;
+  const voice = document.getElementById("voice").value;
+  const text = encodeURIComponent(document.getElementById("text").value);
+  let url = "";
+
+  if (api === "seediffusion") {
+    url = `http://speech.seediffusion.cc:7774/synthesize?voice=${voice}&text=${text}`;
+  }
+
+  if (api === "acapela") {
+    url =
+      `https://www.acapela-cloud.com/api/command/?` +
+      `voice=${voice}&text=${text}` +
+      `&output=stream&type=mp3&samplerate=22050`;
+  }
+
+  if (api === "cereproc") {
+    url = "https://app.cereproc.com/live-demo";
+    alert("CereProc demo opened. Paste your text and select voice manually.");
+  }
+
+  if (url) window.open(url, "_blank");
+}
+
+document.getElementById("text").addEventListener("input", e => {
+  document.getElementById("count").textContent =
+    `${e.target.value.length} / 950`;
+});
+
+updateVoices();
+</script>
+
 </body>
 </html>
