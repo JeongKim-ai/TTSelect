@@ -1,6 +1,14 @@
-{
-  "voices": [
-    {"vid": "Brian", "name": "Brian", "flag": "GB", "lang": "English", "accent": "British", "gender": "M", "provider":"acapela"},
-    {"vid": "Adam", "name": "Adam", "flag": "US", "lang": "English", "accent": "American", "gender": "M", "provider":"cereproc"}
-  ]
-}
+[
+  {
+    "api": "CereProc",
+    "lang": "🇺🇸",
+    "voiceId": "Adam",
+    "voice": "Adam"
+  },
+  {
+    "api": "Oddcast",
+    "lang": "🇺🇸",
+    "voiceId": [2, 1, 9],
+    "voice": "Alan"
+  }
+]
