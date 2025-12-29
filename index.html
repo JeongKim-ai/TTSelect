@@ -26,18 +26,18 @@
     height: 120px;
   }
   button {
-    width: 100%;
     margin-top: 15px;
+    width: 100%;
     padding: 12px;
-    background: #6ab04c;
-    color: #fff;
-    border: none;
     font-size: 16px;
+    background: #6ab04c;
+    color: white;
+    border: none;
     cursor: pointer;
   }
   audio {
-    width: 100%;
     margin-top: 15px;
+    width: 100%;
   }
 </style>
 </head>
@@ -78,86 +78,92 @@
 
 <script>
 /* ===============================
-   Voice Data (JSON-style)
+   VOICE DATABASE
    =============================== */
 const voices = [
   {"vid":"Eric","name":"Eric","flag":"US","lang":"English","accent":"American","gender":"M","api":"seediffusion"},
-  {"vid":"Rod","name":"Rod22K_HQ","flag":"US","lang":"English","accent":"American","gender":"M","api":"acapela"},
+  {"vid":"Rod","name":"Rod","flag":"US","lang":"English","accent":"American","gender":"M","api":"acapela"},
   {"vid":"Adam","name":"Adam","flag":"GB","lang":"English","accent":"British","gender":"M","api":"cereproc"}
 ];
 
 /* ===============================
-   CereProc API CONST (as requested)
+   CEREPROC API CONST
    =============================== */
 const CEREPROC_API =
   "https://app.cereproc.com/live-demo?ajax_form=1&_wrapper_format=drupal_ajax";
 
+/* ===============================
+   UPDATE VOICE LIST
+   =============================== */
 function updateVoices() {
-  const api = apiSelect.value;
-  const lang = language.value;
-  const gen = gender.value;
-  voice.innerHTML = "";
+  const api = document.getElementById("api").value;
+  const lang = document.getElementById("language").value;
+  const gender = document.getElementById("gender").value;
+  const voiceSelect = document.getElementById("voice");
+
+  voiceSelect.innerHTML = "";
 
   voices.forEach(v => {
     if (
       v.api === api &&
       (lang === "All" || v.lang === lang) &&
-      (gen === "All" || v.gender === gen)
+      (gender === "All" || v.gender === gender)
     ) {
-      const o = document.createElement("option");
-      o.value = v.vid;
-      o.textContent = `:${v.flag}: ${v.name}`;
-      voice.appendChild(o);
+      const opt = document.createElement("option");
+      opt.value = v.vid;
+      opt.textContent = `:${v.flag}: ${v.name}`;
+      voiceSelect.appendChild(opt);
     }
   });
 }
 
+/* ===============================
+   GENERATE SPEECH (NO REDIRECT)
+   =============================== */
 function generate() {
-  const api = apiSelect.value;
-  const v = voice.value;
-  const text = encodeURIComponent(textInput.value);
-  let audioUrl = "";
+  const api = document.getElementById("api").value;
+  const voice = document.getElementById("voice").value;
+  const text = encodeURIComponent(document.getElementById("text").value);
+  const audio = document.getElementById("player");
+
+  let url = "";
 
   /* Seediffusion */
   if (api === "seediffusion") {
-    audioUrl =
-      `http://speech.seediffusion.cc:7774/synthesize?voice=${v}&text=${text}`;
+    url = `http://speech.seediffusion.cc:7774/synthesize?voice=${voice}&text=${text}`;
+    audio.src = url;
+    audio.play();
   }
 
-  /* Acapela (CORRECTED – SINGLE URL, NO SPLIT) */
+  /* Acapela (CORRECTED, NOT SPLIT) */
   if (api === "acapela") {
-    const safeVoiceId = v.replace("22K_HQ", "");
-    audioUrl =
-      `https://www.acapela-cloud.com/api/command/?voice=${safeVoiceId}22k_HQ&text=%5Caudio%3Dmix%3D${text}&output=stream&type=mp3&samplerate=22050`;
+    const safeVoiceId = voice;
+    url =
+      `https://www.acapela-cloud.com/api/command/?voice=${safeVoiceId}22k_HQ&text=%5Caudio%3Dmix%3D${text}` +
+      `&output=stream&type=mp3&samplerate=22050`;
+
+    audio.src = url;
+    audio.play();
   }
 
-  /* CereProc (demo – no redirect, notice only) */
+  /* CereProc (no direct stream available) */
   if (api === "cereproc") {
     alert(
-      "CereProc live demo cannot stream audio directly.\n" +
-      "API endpoint:\n" + CEREPROC_API
+      "CereProc does not provide direct audio streaming.\n" +
+      "API endpoint stored:\n\n" + CEREPROC_API
     );
-    return;
   }
-
-  player.src = audioUrl;
-  player.play();
 }
 
-/* Character Counter */
-textInput.addEventListener("input", () => {
-  count.textContent = `${textInput.value.length} / 950`;
+/* ===============================
+   TEXT COUNTER
+   =============================== */
+document.getElementById("text").addEventListener("input", e => {
+  document.getElementById("count").textContent =
+    `${e.target.value.length} / 950`;
 });
 
-/* Shortcuts */
-const apiSelect = document.getElementById("api");
-const language = document.getElementById("language");
-const gender = document.getElementById("gender");
-const voice = document.getElementById("voice");
-const textInput = document.getElementById("text");
-const player = document.getElementById("player");
-const count = document.getElementById("count");
-
+/* INIT */
 updateVoices();
 </script>
 
