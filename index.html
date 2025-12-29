@@ -8,17 +8,43 @@
 <body>
   <h2>TTSelect TTS Generator (Tutorial Coming Soon)</h2>
 
+  <!-- Provider Selector -->
+  <label for="provider">Choose a provider:</label>
+  <select id="provider">
+    <option value="seediffusion">Seediffusion</option>
+    <option value="acapela">Acapela</option>
+    <option value="oddcast">Oddcast</option>
+  </select>
+  <br><br>
+
+  <!-- Language Selector -->
+  <label for="language">Choose a language:</label>
+  <select id="language">
+    <option value="en">🇦🇺 English</option>
+  </select>
+  <br><br>
+
+  <!-- Voice Selector -->
   <label for="voice">Choose a voice:</label>
   <select id="voice">
     <!-- Seediffusion -->
-    <option value="seediffusion|IVONA 2 Eric">IVONA 2 Eric (Seediffusion)</option>
-
+    <option value="IVONA 2 Eric">IVONA 2 Eric (Seediffusion)</option>
     <!-- Acapela -->
-    <option value="acapela|Rod">Rod22K_HQ (Acapela)</option>
+    <option value="Rod">Rod22K_HQ (Acapela)</option>
+    <!-- Oddcast -->
+    <option value="Alan">Alan (Oddcast)</option>
   </select>
-
   <br><br>
 
+  <!-- Gender Selector -->
+  <label for="gender">Choose a gender:</label>
+  <select id="gender">
+    <option value="male">Male</option>
+    <option value="female">Female</option>
+  </select>
+  <br><br>
+
+  <!-- Text Input -->
   <label for="text">Enter your text:</label><br>
   <input
     type="text"
@@ -26,7 +52,6 @@
     placeholder="Type whatever you want like: big chungus"
     size="80"
   >
-
   <br><br>
 
   <button onclick="speak()">Speak</button>
@@ -35,20 +60,23 @@
     /* ===============================
        API URL CONSTANTS
     =============================== */
+    const SEEDIFFUSION_API = 'http://speech.seediffusion.cc:7774/synthesize?voice=${voice}&text=${text}';
+    const ACAPELA_API = 'https://www.acapela-cloud.com/api/command/?voice=${voice}22k_HQ&text=%5Caudio%3Dmix%3D"${gender}"%3Bvolume%3D15%3Brepeat%3Don%5C${text}&output=stream&type=mp3&samplerate=22050&token=bd8b22e3e5ebbaa05ea0055aec4e16c357c29486';
+    const ODDSCAST_API = 'https://cache-a.oddcast.com/tts/gen.php?voice=${voiceId}&text=${text}&lang=${lang}';
 
-    const SEEDIFFUSION_API =
-      'http://speech.seediffusion.cc:7774/synthesize?voice=${voice}&text=${text}';
-
-    const ACAPELA_API =
-      'https://www.acapela-cloud.com/api/command/?voice=${voice}22k_HQ&text=%5Caudio%3Dmix%3D"male"%3Bvolume%3D15%3Brepeat%3Don%5C${text}&output=stream&type=mp3&samplerate=22050&token=bd8b22e3e5ebbaa05ea0055aec4e16c357c29486';
-
+    // Oddcast voice mapping
+    const oddcastVoices = {
+      'Alan': { voiceId: 2, lang: 'en' }
+    };
 
     /* ===============================
        MAIN FUNCTION
     =============================== */
-
     function speak() {
-      const voiceSelect = document.getElementById('voice').value;
+      const provider = document.getElementById('provider').value;
+      const voice = document.getElementById('voice').value;
+      const gender = document.getElementById('gender').value;
+      const language = document.getElementById('language').value;
       const textInput = document.getElementById('text').value;
 
       if (!textInput.trim()) {
@@ -57,27 +85,29 @@
       }
 
       const encodedText = encodeURIComponent(textInput);
-
-      const [engine, voice] = voiceSelect.split('|');
-
       let finalUrl = '';
 
-      if (engine === 'seediffusion') {
-        finalUrl = SEEDIFFUSION_API
-          .replace('${voice}', voice)
-          .replace('${text}', encodedText);
+      if (provider === 'seediffusion') {
+        finalUrl = SEEDIFFUSION_API.replace('${voice}', voice).replace('${text}', encodedText);
       }
 
-      if (engine === 'acapela') {
-        finalUrl = ACAPELA_API
-          .replace('${voice}', voice)
-          .replace('${text}', encodedText);
+      if (provider === 'acapela') {
+        finalUrl = ACAPELA_API.replace('${voice}', voice).replace('${gender}', gender).replace('${text}', encodedText);
       }
 
-      // Redirect to TTS stream
+      if (provider === 'oddcast') {
+        const oddcastData = oddcastVoices[voice];
+        if (!oddcastData) {
+          alert('Selected Oddcast voice not found!');
+          return;
+        }
+        finalUrl = ODDSCAST_API.replace('${voiceId}', oddcastData.voiceId)
+                               .replace('${text}', encodedText)
+                               .replace('${lang}', oddcastData.lang);
+      }
+
       window.location.href = finalUrl;
     }
   </script>
 </body>
 </html>
-
